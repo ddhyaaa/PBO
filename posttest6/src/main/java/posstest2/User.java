@@ -1,0 +1,244 @@
+package posstest2;
+import java.util.ArrayList;
+import java.io.*;
+
+public class User extends Akun {
+    Utilitas utilitas = new Utilitas();
+    private String loggedInUsername, loggedInPassword;
+    private ArrayList<Bunga> DataBunga;
+    private KelolaPesanan kelolaPesanan;
+    private static ArrayList<Akun> DataAkun = new ArrayList<>();
+
+    private static BufferedReader input = new BufferedReader(new InputStreamReader(System.in));
+
+    public User(String username, String password) {
+        super(username, password);
+        this.DataBunga = new ArrayList<>();
+        this.kelolaPesanan = new KelolaPesanan();
+        super.setUsername(username);
+    }
+
+    public User(String username, String password, ArrayList<Bunga> dataBunga) {
+        super(username, password);
+        this.DataBunga = dataBunga;
+        this.kelolaPesanan = new KelolaPesanan();
+        super.setUsername(username);
+    }
+
+    public User(String username, String password, String role) {
+        super(username, password);
+        this.DataBunga = new ArrayList<>();
+        this.kelolaPesanan = new KelolaPesanan();
+        super.setUsername(username);
+    }
+
+    public String getUsername() {
+        return Username;
+    }
+
+    @Override
+    public void displayUserInfo() {
+        System.out.println("Informasi Akun Pengguna:");
+        System.out.println("Username: " + loggedInUsername); 
+        System.out.println("Password: " + loggedInPassword); 
+        System.out.println("Role    : User"); 
+    }
+    
+    public void Display() {
+        if (DataBunga.isEmpty()) {
+            System.out.println("Tidak ada data yang tersedia.");
+            return;
+        }
+        for (Bunga bunga : DataBunga) {
+            bunga.Display();
+        }
+    }
+
+    public void tambah_akun() throws IOException {
+        System.out.println("============================================");
+        System.out.println("             >>  Tambah Akun  <<            ");
+        System.out.println("============================================");
+        String Username = "";
+        String Password = "";
+        while (Username.isEmpty()) {
+            System.out.print("Masukkan Username   : ");
+            Username = input.readLine().trim();
+            if (Username.isEmpty()) {
+                System.out.println("Username tidak boleh kosong.");
+            }
+        }
+        while (Password.isEmpty()) {
+            System.out.print("Masukkan Password   : ");
+            Password = input.readLine().trim();
+            if (Password.isEmpty()) {
+                System.out.println("Password tidak boleh kosong.");
+            }
+        }
+        Akun akn = new User(Username, Password, "User");
+        DataAkun.add(akn);
+        System.out.println("Akun berhasil dibuat!");
+        utilitas.pause();
+    } 
+    
+
+    public void masuk_akun() throws IOException{
+        System.out.println("============================================");
+        System.out.println("            >>  Masuk ke Akun  <<           ");
+        System.out.println("============================================");
+        String Username = "";
+        String Password = "";
+        while (Username.isEmpty()) {
+            System.out.print("Masukkan Username   : ");
+            Username = input.readLine().trim();
+            if (Username.isEmpty()) {
+                System.out.println("Username tidak boleh kosong.");
+            }
+        }
+        while (Password.isEmpty()) {
+            System.out.print("Masukkan Password   : ");
+            Password = input.readLine().trim();
+            if (Password.isEmpty()) {
+                System.out.println("Password tidak boleh kosong.");
+            }
+        }
+
+        boolean loginSuccess = false;
+        for (Akun akun : DataAkun) {
+            if (akun.getUsername().equals(Username) && akun.getPassword().equals(Password)) {
+                loginSuccess = true;
+                this.loggedInUsername = Username;
+                this.loggedInPassword = Password;
+                break;
+            }
+        }
+        if (loginSuccess) {
+            System.out.println("Login berhasil!");
+            utilitas.sleep(2000);
+            menu_user();
+        } else {
+            System.out.println("Login gagal. Username atau password salah.");
+            utilitas.pause();
+        }
+    }
+
+    public void pesanBunga() throws IOException {
+        System.out.println("============================================");
+        System.out.println("             >> Pesan Bunga <<              ");
+        System.out.println("============================================");
+        Display();
+        System.out.println("(ketik '00' untuk kembali)");
+        System.out.print("Masukkan ID Bunga yang ingin dipesan: ");
+        String userInput = input.readLine().trim();
+    
+        if (userInput.equals("00")) {
+            System.out.println("Kembali ke menu utama.");
+            return;
+        }
+        int idBunga = Integer.parseInt(userInput);
+        Bunga bungaDipesan = null;
+        for (Bunga bunga : DataBunga) {
+            if (bunga.getId() == idBunga) {
+                bungaDipesan = bunga;
+                break;
+            }
+        }
+        if (bungaDipesan != null) {
+            System.out.print("Masukkan jumlah bunga yang ingin dipesan: ");
+            int jumlahPesanan = Integer.parseInt(input.readLine());
+            if (jumlahPesanan <= 0) {
+                System.out.println("Jumlah pesanan harus lebih dari nol.");
+            } else if (jumlahPesanan > bungaDipesan.getStok()) {
+                System.out.println("Stok bunga tidak mencukupi untuk pesanan ini. Stok tersedia: " + bungaDipesan.getStok());
+            } else {
+                KelolaPesanan.tambahPesanan(new Pesanan(this.loggedInUsername, bungaDipesan, jumlahPesanan, "Belum dikonfirmasi"), true);
+                bungaDipesan.kurangiStok(jumlahPesanan);
+            }
+        } else {
+            System.out.println("Bunga dengan ID tersebut tidak ditemukan.");
+        }
+    }    
+    
+    public static void Display(KelolaPesanan kelolaPesanan, String loggedInUsername) {
+        System.out.println("============================================");
+        System.out.println("           >> Riwayat Pesanan <<            ");
+        System.out.println("============================================");
+    
+        ArrayList<Pesanan> riwayatPesanan = new ArrayList<>();
+        for (Pesanan pesanan : KelolaPesanan.getDataPesanan()) {
+            if (pesanan.getUsername().equals(loggedInUsername)) {
+                riwayatPesanan.add(pesanan);
+            }
+        }
+    
+        if (riwayatPesanan.isEmpty()) {
+            System.out.println("Anda belum memiliki riwayat pesanan.");
+            return;
+        }
+    
+        for (Pesanan pesanan : riwayatPesanan) {
+            pesanan.display();
+        }
+    }
+
+    public void menu_user() throws IOException{
+        boolean exit = true;
+        while (exit) {
+            utilitas.clear();
+            System.out.println("      OO=============================OO         ");
+            System.out.println("      ||           Hi Dear!          ||         ");
+            System.out.println("      || Welcome to Gardenia Florist ||         ");
+            System.out.println("  _U_ ||           -(O.O)-           || _U_     ");
+            System.out.println("_U_|< 00=============================00 >|_U_   ");
+            System.out.println(">| |  ||    1. Display data bunga    ||  | |<   ");
+            System.out.println(" =====||    2. Pesan Bunga           ||=====    ");
+            System.out.println(" | __ ||    3. Riwayat Pesanan       || __ |    ");
+            System.out.println(" | __ ||    4. Informasi Akun        || __ |    ");
+            System.out.println(" | __ ||    5. Exit                  || __ |    ");
+            System.out.println(" ===========================================    ");
+            System.out.print("        >> Masukkan pilihan anda : ");
+            try {
+                int pilih = Integer.parseInt(input.readLine());
+                switch (pilih) {
+                    case 1:
+                        utilitas.clear();
+                        System.out.println("============================================");
+                        System.out.println("           >>  List Data Bunga <<          ");
+                        System.out.println("============================================");
+                        Display(); 
+                        utilitas.pause();
+                        break;
+                    case 2:
+                        utilitas.clear();
+                        pesanBunga();
+                        utilitas.pause();
+                        break;
+                    case 3:
+                        utilitas.clear();
+                        Display(kelolaPesanan, loggedInUsername);
+                        utilitas.pause();
+                        break;
+                    case 4:
+                        utilitas.clear();
+                        displayUserInfo();
+                        utilitas.pause();
+                        break;
+                    case 5:
+                        System.out.print("Anda yakin ingin keluar? (Y/N): ");
+                        String konfirmasi = input.readLine();
+                        if (konfirmasi.equalsIgnoreCase("Y") || konfirmasi.equalsIgnoreCase("y")){
+                            exit = false;
+                        }
+                        break;
+                    default:
+                        System.out.println("Maaf pilihan tidak tersedia");
+                        utilitas.sleep(1500);
+                        break;
+                }
+              } catch (NumberFormatException e) {
+                System.out.println("Maaf inputan harus berupa angka");
+                utilitas.sleep(1500);
+            }
+        }
+    }
+
+}
